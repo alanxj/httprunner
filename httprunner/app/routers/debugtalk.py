@@ -1,9 +1,9 @@
 import contextlib
-import logging
 import sys
 from io import StringIO
 
 from fastapi import APIRouter
+from loguru import logger
 from starlette.requests import Request
 
 router = APIRouter()
@@ -23,15 +23,11 @@ def stdout_io(stdout=None):
 async def debug_python(request: Request):
     body = await request.body()
 
-    if request.headers.get('content-transfer-encoding') == "base64":
+    if request.headers.get("content-transfer-encoding") == "base64":
         # TODO: decode base64
         pass
 
-    resp = {
-        "code": 0,
-        "message": "success",
-        "result": ""
-    }
+    resp = {"code": 0, "message": "success", "result": ""}
     try:
         with stdout_io() as s:
             exec(body, globals())
@@ -41,6 +37,6 @@ async def debug_python(request: Request):
         resp["code"] = 1
         resp["message"] = "fail"
         resp["result"] = str(ex)
-        logging.error(resp)
+        logger.error(resp)
 
     return resp
