@@ -44,10 +44,10 @@ For compatibility, you can also write upload test script in old way:
 
 import os
 import sys
-from typing import Text, NoReturn
+from typing import Text
 
-from httprunner.models import TStep, FunctionsMapping
-from httprunner.parser import parse_variables_mapping
+from httprunner.models import FunctionsMapping, TStep
+from httprunner.parser import parse_data, parse_variables_mapping
 from loguru import logger
 
 try:
@@ -75,8 +75,8 @@ def ensure_upload_ready():
     sys.exit(1)
 
 
-def prepare_upload_step(step: TStep, functions: FunctionsMapping) -> "NoReturn":
-    """ preprocess for upload test
+def prepare_upload_step(step: TStep, functions: FunctionsMapping):
+    """preprocess for upload test
         replace `upload` info with MultipartEncoder
 
     Args:
@@ -101,6 +101,9 @@ def prepare_upload_step(step: TStep, functions: FunctionsMapping) -> "NoReturn":
     if not step.request.upload:
         return
 
+    # parse upload info
+    step.request.upload = parse_data(step.request.upload, step.variables, functions)
+
     ensure_upload_ready()
     params_list = []
     for key, value in step.request.upload.items():
@@ -119,7 +122,7 @@ def prepare_upload_step(step: TStep, functions: FunctionsMapping) -> "NoReturn":
 
 
 def multipart_encoder(**kwargs):
-    """ initialize MultipartEncoder with uploading fields.
+    """initialize MultipartEncoder with uploading fields.
 
     Returns:
         MultipartEncoder: initialized MultipartEncoder object
@@ -164,7 +167,7 @@ def multipart_encoder(**kwargs):
 
 
 def multipart_content_type(m_encoder) -> Text:
-    """ prepare Content-Type for request headers
+    """prepare Content-Type for request headers
 
     Args:
         m_encoder: MultipartEncoder object

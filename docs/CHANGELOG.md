@@ -1,5 +1,293 @@
 # Release History
 
+## v4.1.2 (2022-06-05)
+
+- fix #1331: use `str_eq` to assert string and digit equality
+- fix #1336: extract package in Windows
+- fix: install package on MinGW64
+- change: remove `hrp har2case`, replace with `hrp convert`
+
+## v4.1.1 (2022-05-31)
+
+- fix: failed to build debugtalk.go without go.mod
+- fix: avoid to escape from html special characters like '&' in converted JSON testcase
+- fix: display the full step name when referencing testcase in html report
+- fix: failed to regenerate debugtalk_gen.go and .debugtalk_gen.py correctly
+
+## v4.1.0 (2022-05-29)
+
+- feat: add `wiki` sub-command to open httprunner website
+- feat: add `build` sub-command for function plugin
+
+**go version**
+
+- feat #1268: convert postman collection to HttpRunner testcase
+- feat #1291: run testcases in v2/v3 JSON/YAML format with hrp run/boom command
+- feat #1280: support creating empty scaffold project
+- fix #1308: load `.env` file as environment variables
+- fix #1309: locate plugin file upward recursively until system root dir
+- fix #1315: failed to generate a report in failfast mode
+- refactor: move base_url to config `environs`
+- refactor: implement testcase conversions with `hrp convert`
+
+## v4.1.0-beta (2022-05-21)
+
+- feat: add pre-commit-hook to format go/python code
+
+**go version**
+
+- feat: add boomer mode(standalone/master/worker)
+- feat: support load testing with specified `--profile` configuration file
+- fix: step request elapsed timing should contain ContentTransfer part
+- fix #1288: unable to go get httprunner v4
+- fix: panic when config didn't exist in testcase file
+- fix: disable keep alive and improve RPS accuracy
+- fix: improve RPS accuracy
+
+**python version**
+
+- feat: support new step type with SQL operation
+- feat: support new step type with thrift protocol
+
+## v4.0.0 (2022-05-05)
+
+**go version**
+
+- feat: stat HTTP request latencies (DNSLookup, TCP Connection and so on)
+- feat: add builtin function `environ`/`ENV`
+- fix: demo function compatibility
+- fix #1240: losing host port in har2case
+- fix: concurrent map write in parameterize
+- change: get hrp version from aliyun OSS file when installing
+- change: report more load testing metrics to prometheus
+
+## v4.0.0-beta (2022-04-24)
+
+- refactor: merge [hrp] into httprunner v4, which will include golang and python dual engine
+- refactor: redesign `IStep` to make step extensible to support implementing new protocols and test types
+- feat: disable GA events report by setting environment `DISABLE_GA=true`
+- feat: disable sentry reports by setting environment `DISABLE_SENTRY=true`
+- feat: prepare python3 venv in `~/.hrp/venv` before running
+
+**go version**
+
+- feat: add `--profile` flag for har2case to support overwrite headers/cookies with specified yaml/json profile file
+- feat: support run testcases in specified folder path, including testcases in sub folders
+- feat: support HTTP/2 protocol
+- feat: support WebSocket protocol
+- feat: convert YAML/JSON testcases to pytest scripts with `hrp convert`
+- change: integrate [sentry sdk][sentry sdk] for panic reporting and analysis
+- change: lock funplugin version when creating scaffold project
+- fix: call referenced api/testcase with relative path
+
+**python version**
+
+- feat: support retry when test step failed
+- feat: add `pytest` sub-command to run pytest scripts
+- change: remove startproject, move all features to go version, replace with `hrp startproject`
+- change: remove har2case, move all features to go version, replace with `hrp run`
+- change: remove locust, you should run load tests with go version, replace with `hrp boom`
+- change: remove fastapi and uvicorn dependencies
+- change: add pytest.ini to make log colorful
+- fix: ignore exceptions when reporting GA events
+- fix: remove misuse of NoReturn in Python typing
+
+## hrp-v0.8.0 (2022-03-22)
+
+- feat: support hashicorp python plugin over gRPC
+- feat: create scaffold with plugin option, `--py`(default), `--go`, `--ignore-plugin`
+- feat: print statistics summary after load testing finished
+- feat: support think time for api/load testing
+- fix: update prometheus state to stopped on quit
+
+## hrp-v0.7.0 (2022-03-15)
+
+- feat: support API layer for testcase
+- feat: support global headers for testcase
+- feat: support call referenced testcase by path in YAML/JSON testcases
+- fix: decode failure when content-encoding is deflate
+- fix: unstable RPS when load testing in high concurrency
+
+## hrp-v0.6.4 (2022-03-10)
+
+- feat: both support gRPC(default) and net/rpc mode in hashicorp plugin, switch with environment `HRP_PLUGIN_TYPE`
+- refactor: move submodule `plugin` to separate repo `github.com/httprunner/funplugin`
+- refactor: replace builtin json library with `json-iterator/go` to improve performance
+
+## hrp-v0.6.3 (2022-03-04)
+
+- feat: support customized setup/teardown hooks (variable assignment not supported)
+- feat: add flag `--log-plugin` to turn on plugin logging
+- change: add short flag `-c` for `--continue-on-failure`
+- change: use `--log-requests-off` flag to turn off request & response details logging
+- fix: support posting body in json array format
+- fix: testcase format compatibility with HttpRunner
+
+## hrp-v0.6.2 (2022-02-22)
+
+- feat: support text/html extraction with regex
+- change: json unmarshal to json.Number when parsing data
+- fix: omit pseudo header names for HTTP/1, e.g. :authority
+- fix: generate `headers.\"Content-Type\"` in har2case
+- fix: incorrect data type when extracting data using jmespath
+- fix: decode response body in brotli/gzip/deflate formats
+- fix: omit print request/response body for non-text content
+- fix: parse data for request cookie value
+
+## hrp-v0.6.1 (2022-02-17)
+
+- change: json unmarshal to float64 when parsing data
+- fix: set request Content-Type for posting json only when not specified
+- fix: failed to generate API test report when data is null
+- fix: panic when assertion function not exists
+- fix: broadcast to all rendezvous at once when spawn done
+
+## hrp-v0.6.0 (2022-02-08)
+
+- feat: implement `rendezvous` mechanism for data driven
+- feat: upload release artifacts to aliyun oss
+- feat: dump tests summary for execution results
+- feat: generate html report for API testing
+- change: remove sentry sdk
+
+## hrp-v0.5.3 (2022-01-25)
+
+- change: download package assets from aliyun OSS
+- fix: disable color logging on Windows
+- fix: print stderr when exec command failed
+- fix: build hashicorp plugin failed when creating scaffold
+
+## hrp-v0.5.2 (2022-01-19)
+
+- feat: support creating and calling custom functions with [hashicorp/go-plugin]
+- feat: add scaffold demo with hashicorp plugin
+- feat: report events for initializing plugin
+- fix: log failures when the assertion failed
+
+## hrp-v0.5.1 (2022-01-13)
+
+- feat: support specifying running cycles for load testing
+- fix: ensure last stats reported when stop running
+
+## hrp-v0.5.0 (2022-01-08)
+
+- feat: support creating and calling custom functions with [go plugin]
+- feat: install hrp with one shell command
+- feat: add `startproject` sub-command for creating scaffold project
+- feat: report GA event for loading go plugin
+
+## hrp-v0.4.0 (2022-01-05)
+
+- feat: implement `parameterize` mechanism for data driven
+- feat: add multiple builtin assertion methods and builtin functions
+
+## hrp-v0.3.1 (2021-12-30)
+
+- fix: set ulimit to 10240 before load testing
+- fix: concurrent map writes in load testing
+
+## hrp-v0.3.0 (2021-12-24)
+
+- feat: implement `transaction` mechanism for load test
+- feat: continue running next step when failure occurs with `--continue-on-failure` flag, default to failfast
+- feat: report GA events with version
+- feat: run load test with the given limit and burst as rate limiter, use `--spawn-count`, `--spawn-rate` and `--request-increase-rate` flag
+- feat: report runner state to prometheus
+- refactor: fork [boomer] as submodule initially and made a lot of changes
+- change: update API models
+
+## hrp-v0.2.2 (2021-12-07)
+
+- refactor: update models to make API more concise
+- change: remove mkdocs, move to [docs repo]
+
+## hrp-v0.2.1 (2021-12-02)
+
+- feat: push load testing metrics to [Prometheus Pushgateway][pushgateway]
+- feat: report events with Google Analytics
+
+## hrp-v0.2.0 (2021-11-19)
+
+- feat: deploy mkdocs to github pages when PR merged
+- feat: release hrp cli binaries automatically with github actions
+- feat: add Makefile for running unittest and building hrp cli binary
+
+## hrp-v0.1.0 (2021-11-18)
+
+- feat: full support for HTTP(S)/1.1 methods
+- feat: integrate [zerolog] for logging, include json log and pretty color console log
+- feat: implement `har2case` for converting HAR to JSON/YAML testcases
+- feat: extract and validate json response with [`jmespath`][jmespath]
+- feat: run JSON/YAML testcases with builtin functions
+- feat: support testcase and teststep level variables mechanism
+- feat: integrate [boomer] standalone mode for load testing
+- docs: init documentation website with [mkdocs]
+- docs: add project badges, including go report card, codecov, github actions, FOSSA, etc.
+- test: add CI test with [github actions][github-actions]
+- test: integrate [sentry sdk][sentry sdk] for event reporting and analysis
+
+## 3.1.11 (2022-04-24)
+
+- fix #1273: ImportError by cannot import name '_unicodefun' from 'click'
+
+## 3.1.10 (2022-04-18)
+
+- fix #1249: catch exceptions when requesting with disabling allow_redirects
+- fix: catch OSError when running subprocess
+
+## 3.1.9 (2022-04-17)
+
+- fix #1174: pydantic validation error when body is None
+- fix #1209: only convert jmespath path for some fields in white list
+- fix #1233: parse upload info with session variables
+- fix #1246: catch exceptions caused by GA report failure
+- fix #1247: catch exceptions when getting socket address failed
+
+## 3.1.8 (2022-03-22)
+
+- feat: add `--profile` flag for har2case to support overwrite headers/cookies with specified yaml/json configuration file
+- feat: support variable and function in response extract expression
+- fix: keep negative index in jmespath unchanged when converting pytest files, e.g. body.users[-1]
+- fix: variable should not start with digit
+- change: load yaml file with FullLoader
+
+## 3.1.7 (2022-03-22)
+
+- fix #1117: ignore comments and blank lines when parsing .env file
+- fix #1141: parameterize failure caused by pydantic version
+- fix #1165: ImportError caused by jinja2 version
+- fix: failure in getting client and server IP/port when requesting HTTPS
+- fix: upgrade dependencies for security
+- change: remove support for dead python 3.6, upgrade supported python version to 3.7/3.8/3.9/3.10
+- change: replace events reporter from sentry to Google Analytics
+
+## 3.1.6 (2021-07-18)
+
+**Fixed**
+
+- fix #1086: chinese garbled in response
+- fix #1068: incorrect variables and variable type hints
+- fix #1079: display error in request body if the list inputted from with_json() contains dict
+- fix #1056: validation failed when validation-value is in string format
+
+## 3.1.5 (2021-06-27)
+
+**Fixed**
+
+- fix: decode brotli encoding
+
+## 3.1.4 (2020-07-30)
+
+**Changed**
+
+- change: override variables strategy, step variables > extracted variables from previous steps
+
+**Fixed**
+
+- fix: parameters feature with custom functions
+- fix: request json field with variable reference
+- fix: pickle BufferedReader TypeError in upload feature
+
 ## 3.1.3 (2020-07-06)
 
 **Added**
@@ -43,7 +331,7 @@
 
 **Added**
 
-- feat: integrate [locust](https://locust.io/) v1.0
+- feat: integrate [locust] v1.0
 
 **Changed**
 
@@ -232,8 +520,8 @@
 
 **Added**
 
-- feat: add `make` sub-command to generate python testcases from YAML/JSON  
-- feat: format generated python testcases with [`black`](https://github.com/psf/black)
+- feat: add `make` sub-command to generate python testcases from YAML/JSON
+- feat: format generated python testcases with [black]
 - test: add postman echo & httpbin as testcase examples
 
 **Changed**
@@ -262,9 +550,30 @@
 **Changed**
 
 - remove support for Python 2.7
-- replace logging with [loguru](https://github.com/Delgan/loguru)
+- replace logging with [loguru]
 - replace string format with f-string
 - remove dependency colorama and colorlog
 - generate reports/logs folder in current working directory
 - remove cli `--validate`
 - remove cli `--pretty`
+
+## 2.0 (2019-01-01~2020-02-21)
+
+reference: [v2-changelog]
+
+
+[hrp]: https://github.com/httprunner/hrp
+[hashicorp/go-plugin]: https://github.com/hashicorp/go-plugin
+[go plugin]: https://pkg.go.dev/plugin
+[docs repo]: https://github.com/httprunner/httprunner.github.io
+[zerolog]: https://github.com/rs/zerolog
+[jmespath]: https://jmespath.org/
+[mkdocs]: https://www.mkdocs.org/
+[github-actions]: https://github.com/httprunner/hrp/actions
+[boomer]: github.com/myzhan/boomer
+[sentry sdk]: https://github.com/getsentry/sentry-go
+[pushgateway]: https://github.com/prometheus/pushgateway
+[locust]: https://locust.io/
+[black]: https://github.com/psf/black
+[loguru]: https://github.com/Delgan/loguru
+[v2-changelog]: https://github.com/httprunner/httprunner/blob/v2/docs/CHANGELOG.md

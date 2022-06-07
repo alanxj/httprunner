@@ -1,19 +1,17 @@
-from typing import Dict, Text, Any, NoReturn
+from typing import Dict, Text, Any
 
 import jmespath
-import requests
 from jmespath.exceptions import JMESPathError
 from loguru import logger
 
 from httprunner import exceptions
 from httprunner.exceptions import ValidationFailure, ParamsError
-from httprunner.models import VariablesMapping, Validators, FunctionsMapping
-from httprunner.parser import parse_data, parse_string_value, get_mapping_function
+from httprunner.models import VariablesMapping, Validators
+from httprunner.parser import parse_string_value, Parser
 
 
 def get_uniform_comparator(comparator: Text):
-    """ convert comparator alias to uniform name
-    """
+    """convert comparator alias to uniform name"""
     if comparator in ["eq", "equals", "equal"]:
         return "equal"
     elif comparator in ["lt", "less_than"]:
@@ -52,7 +50,7 @@ def get_uniform_comparator(comparator: Text):
 
 
 def uniform_validator(validator):
-    """ unify validator
+    """unify validator
 
     Args:
         validator (dict): validator maybe in two formats:
@@ -114,77 +112,57 @@ def uniform_validator(validator):
     }
 
 
-class ResponseObject(object):
-    def __init__(self, resp_obj: requests.Response):
-        """ initialize with a requests.Response object
+class ResponseObjectBase(object):
+    def __init__(self, resp_obj, parser: Parser):
+        """initialize with a response object
 
         Args:
             resp_obj (instance): requests.Response instance
 
         """
         self.resp_obj = resp_obj
+        self.parser = parser
         self.validation_results: Dict = {}
 
-    def __getattr__(self, key):
-        if key in ["json", "content", "body"]:
-            try:
-                value = self.resp_obj.json()
-            except ValueError:
-                value = self.resp_obj.content
-        elif key == "cookies":
-            value = self.resp_obj.cookies.get_dict()
-        else:
-            try:
-                value = getattr(self.resp_obj, key)
-            except AttributeError:
-                err_msg = "ResponseObject does not have attribute: {}".format(key)
-                logger.error(err_msg)
-                raise exceptions.ParamsError(err_msg)
-
-        self.__dict__[key] = value
-        return value
-
-    def _search_jmespath(self, expr: Text) -> Any:
-        resp_obj_meta = {
-            "status_code": self.status_code,
-            "headers": self.headers,
-            "cookies": self.cookies,
-            "body": self.body,
-        }
-        try:
-            check_value = jmespath.search(expr, resp_obj_meta)
-        except JMESPathError as ex:
-            logger.error(
-                f"failed to search with jmespath\n"
-                f"expression: {expr}\n"
-                f"data: {resp_obj_meta}\n"
-                f"exception: {ex}"
-            )
-            raise
-
-        return check_value
-
-    def extract(self, extractors: Dict[Text, Text]) -> Dict[Text, Any]:
+    def extract(
+        self,
+        extractors: Dict[Text, Text],
+        variables_mapping: VariablesMapping = None,
+    ) -> Dict[Text, Any]:
         if not extractors:
             return {}
 
         extract_mapping = {}
         for key, field in extractors.items():
+            if "$" in field:
+                # field contains variable or function
+                field = self.parser.parse_data(field, variables_mapping)
             field_value = self._search_jmespath(field)
             extract_mapping[key] = field_value
 
         logger.info(f"extract mapping: {extract_mapping}")
         return extract_mapping
 
+    def _search_jmespath(self, expr: Text) -> Any:
+        try:
+            check_value = jmespath.search(expr, self.resp_obj)
+        except JMESPathError as ex:
+            logger.error(
+                f"failed to search with jmespath\n"
+                f"expression: {expr}\n"
+                f"data: {self.resp_obj}\n"
+                f"exception: {ex}"
+            )
+            raise
+        return check_value
+
     def validate(
         self,
         validators: Validators,
         variables_mapping: VariablesMapping = None,
-        functions_mapping: FunctionsMapping = None,
-    ) -> NoReturn:
+    ):
 
         variables_mapping = variables_mapping or {}
-        functions_mapping = functions_mapping or {}
 
         self.validation_results = {}
         if not validators:
@@ -204,9 +182,7 @@ class ResponseObject(object):
             check_item = u_validator["check"]
             if "$" in check_item:
                 # check_item is variable or function
-                check_item = parse_data(
-                    check_item, variables_mapping, functions_mapping
-                )
+                check_item = self.parser.parse_data(check_item, variables_mapping)
                 check_item = parse_string_value(check_item)
 
             if check_item and isinstance(check_item, Text):
@@ -217,17 +193,17 @@ class ResponseObject(object):
 
             # comparator
             assert_method = u_validator["assert"]
-            assert_func = get_mapping_function(assert_method, functions_mapping)
+            assert_func = self.parser.get_mapping_function(assert_method)
 
             # expect item
             expect_item = u_validator["expect"]
             # parse expected value with config/teststep/extracted variables
-            expect_value = parse_data(expect_item, variables_mapping, functions_mapping)
+            expect_value = self.parser.parse_data(expect_item, variables_mapping)
 
             # message
             message = u_validator["message"]
             # parse message with config/teststep/extracted variables
-            message = parse_data(message, variables_mapping, functions_mapping)
+            message = self.parser.parse_data(message, variables_mapping)
 
             validate_msg = f"assert {check_item} {assert_method} {expect_value}({type(expect_value).__name__})"
 
@@ -268,3 +244,55 @@ class ResponseObject(object):
         if not validate_pass:
             failures_string = "\n".join([failure for failure in failures])
             raise ValidationFailure(failures_string)
+
+
+class ResponseObject(ResponseObjectBase):
+    def __getattr__(self, key):
+        if key in ["json", "content", "body"]:
+            try:
+                value = self.resp_obj.json()
+            except ValueError:
+                value = self.resp_obj.content
+        elif key == "cookies":
+            value = self.resp_obj.cookies.get_dict()
+        else:
+            try:
+                value = getattr(self.resp_obj, key)
+            except AttributeError:
+                err_msg = "ResponseObject does not have attribute: {}".format(key)
+                logger.error(err_msg)
+                raise exceptions.ParamsError(err_msg)
+
+        self.__dict__[key] = value
+        return value
+
+    def _search_jmespath(self, expr: Text) -> Any:
+        resp_obj_meta = {
+            "status_code": self.status_code,
+            "headers": self.headers,
+            "cookies": self.cookies,
+            "body": self.body,
+        }
+        if not expr.startswith(tuple(resp_obj_meta.keys())):
+            return expr
+
+        try:
+            check_value = jmespath.search(expr, resp_obj_meta)
+        except JMESPathError as ex:
+            logger.error(
+                f"failed to search with jmespath\n"
+                f"expression: {expr}\n"
+                f"data: {resp_obj_meta}\n"
+                f"exception: {ex}"
+            )
+            raise
+
+        return check_value
+
+
+class ThriftResponseObject(ResponseObjectBase):
+    pass
+
+
+class SqlResponseObject(ResponseObjectBase):
+    pass
